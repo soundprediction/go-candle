@@ -1,3 +1,8 @@
+// Package candle provides Go bindings for the candle ML framework via Rust FFI.
+//
+// To rebuild the Rust binding for the host platform and re-compress:
+//
+//go:generate bash -c "cd ../.. && ./scripts/build-binding.sh host"
 package candle
 
 /*
@@ -70,6 +75,14 @@ var (
 	fnRunTranslation          unsafe.Pointer
 	fnFreeTranslationPipeline unsafe.Pointer
 	fnFreeTranslationResult   unsafe.Pointer
+
+	// Sequence Classification (NLI)
+	fnNewSeqClassificationPipeline     unsafe.Pointer
+	fnRunSeqClassification             unsafe.Pointer
+	fnRunSeqClassificationBatch        unsafe.Pointer
+	fnFreeSeqClassificationPipeline    unsafe.Pointer
+	fnFreeSeqClassificationResult      unsafe.Pointer
+	fnFreeBatchSeqClassificationResult unsafe.Pointer
 )
 
 // lastError retrieves the last error from the Rust binding.

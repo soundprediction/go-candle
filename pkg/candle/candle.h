@@ -366,4 +366,53 @@ static inline void call_free_translation_result(void* f, TranslationResult* r) {
     ((free_translation_result_t)f)(r);
 }
 
+// --- Sequence Classification (NLI) ---
+
+typedef struct {
+    void* _opaque;
+} SeqClassificationPipelineWrapper;
+
+typedef struct {
+    float* logits;
+    size_t num_classes;
+} SeqClassificationResult;
+
+typedef struct {
+    float* logits;
+    size_t num_classes;
+    size_t count;
+} BatchSeqClassificationResult;
+
+typedef SeqClassificationPipelineWrapper* (*new_seq_classification_pipeline_t)(const char* config_json);
+typedef SeqClassificationResult* (*run_seq_classification_t)(SeqClassificationPipelineWrapper* wrapper, const char* text, _Bool apply_softmax);
+typedef BatchSeqClassificationResult* (*run_seq_classification_batch_t)(SeqClassificationPipelineWrapper* wrapper, const char** texts, size_t count, _Bool apply_softmax);
+typedef void (*free_seq_classification_pipeline_t)(SeqClassificationPipelineWrapper* wrapper);
+typedef void (*free_seq_classification_result_t)(SeqClassificationResult* result);
+typedef void (*free_batch_seq_classification_result_t)(BatchSeqClassificationResult* result);
+
+// Sequence Classification helpers
+static inline SeqClassificationPipelineWrapper* call_new_seq_classification_pipeline(void* f, const char* config_json) {
+    return ((new_seq_classification_pipeline_t)f)(config_json);
+}
+
+static inline SeqClassificationResult* call_run_seq_classification(void* f, SeqClassificationPipelineWrapper* w, const char* text, _Bool apply_softmax) {
+    return ((run_seq_classification_t)f)(w, text, apply_softmax);
+}
+
+static inline BatchSeqClassificationResult* call_run_seq_classification_batch(void* f, SeqClassificationPipelineWrapper* w, const char** texts, size_t count, _Bool apply_softmax) {
+    return ((run_seq_classification_batch_t)f)(w, texts, count, apply_softmax);
+}
+
+static inline void call_free_seq_classification_pipeline(void* f, SeqClassificationPipelineWrapper* w) {
+    ((free_seq_classification_pipeline_t)f)(w);
+}
+
+static inline void call_free_seq_classification_result(void* f, SeqClassificationResult* r) {
+    ((free_seq_classification_result_t)f)(r);
+}
+
+static inline void call_free_batch_seq_classification_result(void* f, BatchSeqClassificationResult* r) {
+    ((free_batch_seq_classification_result_t)f)(r);
+}
+
 #endif /* CANDLE_H */

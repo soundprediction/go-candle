@@ -12,6 +12,7 @@ mod segmentation;
 mod whisper;
 mod t5;
 mod translation;
+mod sequence_classification;
 
 // Re-export FFI functions
 pub use text_generation::*;
@@ -23,6 +24,7 @@ pub use segmentation::*;
 pub use whisper::*;
 pub use t5::*;
 pub use translation::*;
+pub use sequence_classification::*;
 
 // --- Thread-local error handling ---
 

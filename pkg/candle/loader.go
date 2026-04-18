@@ -268,6 +268,26 @@ func loadAllSymbols() error {
 		return err
 	}
 
+	// Sequence Classification (NLI)
+	if fnNewSeqClassificationPipeline, err = loadSym("new_seq_classification_pipeline"); err != nil {
+		return err
+	}
+	if fnRunSeqClassification, err = loadSym("run_seq_classification"); err != nil {
+		return err
+	}
+	if fnRunSeqClassificationBatch, err = loadSym("run_seq_classification_batch"); err != nil {
+		return err
+	}
+	if fnFreeSeqClassificationPipeline, err = loadSym("free_seq_classification_pipeline"); err != nil {
+		return err
+	}
+	if fnFreeSeqClassificationResult, err = loadSym("free_seq_classification_result"); err != nil {
+		return err
+	}
+	if fnFreeBatchSeqClassificationResult, err = loadSym("free_batch_seq_classification_result"); err != nil {
+		return err
+	}
+
 	return nil
 }
 
