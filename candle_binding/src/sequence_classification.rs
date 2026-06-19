@@ -82,7 +82,26 @@ fn load_seq_classification_model(
         .map_err(|e| anyhow::anyhow!("tokenizer load error: {e}"))?;
 
     let weight_files = load_weight_files(&repo)?;
-    let vb = unsafe { VarBuilder::from_mmaped_safetensors(&weight_files, DType::F32, device)? };
+    // HF `DebertaV2ForSequenceClassification` checkpoints (e.g.
+    // cross-encoder/nli-deberta-v3-*) store the backbone under a `deberta.` prefix
+    // (`deberta.embeddings.word_embeddings.weight`, `deberta.encoder.*`) while the
+    // head stays at the root (`classifier.*`, `pooler.*`). candle's
+    // DebertaV2SeqClassificationModel::load expects the backbone at the VarBuilder
+    // root, so without remapping it fails with "cannot find tensor
+    // embeddings.word_embeddings.weight". Strip the leading `deberta.` prefix so the
+    // backbone lands at the root while the head tensors are left untouched. Plain
+    // backbone checkpoints (already at the root) are unaffected.
+    let mut tensors: std::collections::HashMap<String, Tensor> = std::collections::HashMap::new();
+    for wf in &weight_files {
+        for (name, tensor) in candle_core::safetensors::load(wf, device)? {
+            let key = name
+                .strip_prefix("deberta.")
+                .map(|s| s.to_string())
+                .unwrap_or(name);
+            tensors.insert(key, tensor.to_dtype(DType::F32)?);
+        }
+    }
+    let vb = VarBuilder::from_tensors(tensors, DType::F32, device);
     let model = DebertaV2SeqClassificationModel::load(vb, &deberta_config, None)?;
 
     Ok((model, tokenizer, num_labels))
@@ -299,5 +318,24 @@ pub extern "C" fn free_batch_seq_classification_result(
                 drop(Vec::from_raw_parts(r.logits, total, total));
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod load_fix_tests {
+    use super::*;
+
+    // Regression: cross-encoder/nli-deberta-v3-xsmall stores the backbone under a
+    // `deberta.` prefix; loading must succeed (was failing with "cannot find tensor
+    // embeddings.word_embeddings.weight" before the prefix-strip fix).
+    // #[ignore]d by default: downloads the model from HF Hub. Run with
+    // `cargo test -- --ignored loads_nli_deberta_v3_xsmall`.
+    #[test]
+    #[ignore]
+    fn loads_nli_deberta_v3_xsmall() {
+        let cfg = serde_json::json!({ "model_id": "cross-encoder/nli-deberta-v3-xsmall" });
+        let (_model, _tok, num_labels) =
+            load_seq_classification_model(&cfg, &Device::Cpu).expect("model should load");
+        assert_eq!(num_labels, 3, "NLI model should have 3 labels");
     }
 }
